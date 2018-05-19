@@ -39,6 +39,16 @@ this way we can dbl buffer etc
 */
 
 var font = [];
+font[32] = [
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00000000
+];
 font[65] = [
   0b00000000,
   0b00011000,
@@ -48,6 +58,26 @@ font[65] = [
   0b01111110,
   0b01100110,
   0b01100110
+];
+font[74] = [
+  0b00000000,
+  0b01111110,
+  0b00000110,
+  0b00000110,
+  0b00000110,
+  0b11000110,
+  0b11001100,
+  0b01111000
+];
+font[77] = [
+  0b00000000,
+  0b11000110,
+  0b11101110,
+  0b11010110,
+  0b11000110,
+  0b11000110,
+  0b11000110,
+  0b11000110
 ];
 
 class TextMode {
@@ -92,7 +122,7 @@ class TextMode {
    */
   moveTo (row, col) {
     this.row = Math.max(0, Math.min(this.tw - 1, row));
-    this.col = Math.max(0, Math.min(this.th / this.fh - 1, col));
+    this.col = Math.max(0, Math.min(this.th - 1, col));
   }
 
   print (text) {
@@ -100,7 +130,7 @@ class TextMode {
       let charData = this.font[char.charCodeAt()];
       if (charData !== undefined) {
         charData.forEach((row, i) => {
-          let pixelPos = (this.col * this.fw) + (this.row * this.fw) + (i * this.pw);
+          let pixelPos = (this.col * this.fw) + (this.row * this.pw * this.fh) + (i * this.pw);
           for (let mask = 1 << (this.fw - 1); mask; mask >>= 1) {
             const pixel = this.palette[row & mask ? this.fg : this.bg];
             this._setPixel(pixelPos, pixel);
@@ -145,6 +175,7 @@ class TextMode {
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const tm = new TextMode(ctx);
-tm.print('AA');
+tm.moveTo(10,5);
+tm.print('JAM');
 
 </script>
