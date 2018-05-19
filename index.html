@@ -1,0 +1,95 @@
+<canvas id="canvas" width="150" height="150"></canvas>
+<script>
+/**
+textmode
+
+define bitmap font - 
+
+API:
+
+font.load
+font.save
+
+loadFont
+setPalette
+setFgColor
+setBgColor
+print
+moveTo
+printAt
+cls
+chr
+
+1st experiment:
+
+bitmap font load and render in canvas
+
+8x8
+
+
+2nd experiment:
+
+make the TextMode object, initialise it with a background colour
+
+const tm = new TextMode(ctx, {x, y, w, h, cw, ch})
+
+Implementation: write to a buffer and set the imagedata in a animframe
+this way we can dbl buffer etc
+
+*/
+
+  var font = [
+    [
+      0b00000000,
+      0b00011000,
+      0b00111100,
+      0b01100110,
+      0b01100110,
+      0b01111110,
+      0b01100110,
+      0b01100110
+    ]
+  ];
+
+class TextMode {
+  constructor (ctx, x=0, y=0, w=320, h=240) {
+    this.ctx = ctx;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.font = font;
+    this.palette = [
+      [0x00, 0x00, 0x00, 0xFF],
+      [0x00, 0xFF, 0x00, 0xFF]
+    ];
+    this.bg = 0;
+    this.fg = 1;
+  }
+
+  render () {
+    const imgData = ctx.createImageData(8, 8);
+    let pos = 0;
+    this.font[0].forEach(row => {
+      for (let mask = 1 << 7; mask; mask >>= 1) {
+        const pixel = this.palette[row & mask ? this.fg : this.bg];
+        imgData.data[pos * 4 + 0] = pixel[0];
+        imgData.data[pos * 4 + 1] = pixel[1];
+        imgData.data[pos * 4 + 2] = pixel[2];
+        imgData.data[pos * 4 + 3] = pixel[3];
+        pos++;
+      }
+    });
+    console.log(imgData)
+
+    // render into the damn canvas
+    this.ctx.putImageData(imgData, this.x, this.y);
+  }
+}
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const tm = new TextMode(ctx);
+tm.render();
+
+</script>
