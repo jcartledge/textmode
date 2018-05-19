@@ -1,11 +1,7 @@
-<canvas id="canvas" width="320" height="240"></canvas>
+<canvas id="canvas" width="640" height="480"></canvas>
 <script>
 /**
 textmode
-
-define bitmap font - 
-
-API:
 
 font.load
 font.save
@@ -19,23 +15,6 @@ moveTo
 printAt
 cls
 chr
-
-1st experiment:
-
-bitmap font load and render in canvas
-
-8x8
-
-
-2nd experiment:
-
-make the TextMode object, initialise it with a background colour
-
-const tm = new TextMode(ctx, {x, y, w, h, cw, ch})
-
-Implementation: write to a buffer and set the imagedata in a animframe
-this way we can dbl buffer etc
-
 */
 
 var font = [];
@@ -81,25 +60,40 @@ font[77] = [
 ];
 
 class TextMode {
-  constructor (ctx, x=0, y=0, pw=320, ph=240) {
+  constructor (ctx, x=0, y=0, pw=320, ph=240, scale=2) {
     this.ctx = ctx;
     this.x = x;
     this.y = y;
     this.pw = pw;
     this.ph = ph;
+    this.scale = scale;
+
+    // Font size is fixed for now. @FIXME.
     this.fw = 8;
     this.fh = 8;
+
+    // Number of chars across and down.
     this.tw = this.pw / this.fw;
     this.th = this.ph / this.fh;
+    
+    // Total size in virtual (scaled) pixels.
     this.size = pw * ph;
+    
+    // @FIXME this is pretty gross.
     this.font = font;
+
+    // Indexed color palette.
+    // Fg and bg refer to a palette index.
+    // Palette entries are arrays of RGBA.
     this.palette = [
       [0x00, 0x00, 0x00, 0xFF],
       [0x00, 0xFF, 0x00, 0xFF]
     ];
     this.bg = 0;
     this.fg = 1;
-    this.imgData = this.ctx.createImageData(this.pw, this.ph);
+
+    // Create the buffer, fill it with bg, and set up the render loop.
+    this.imgData = this.ctx.createImageData(this.pw * scale, this.ph * scale);
     this.cls();
     this._render();
   }
@@ -159,11 +153,23 @@ class TextMode {
     this.row = this.th - 1;
   }
 
+  /**
+   * Sets a virtual (scaled) pixel.
+   */
   _setPixel (pos, pixel) {
-    this.imgData.data[pos * 4 + 0] = pixel[0];
-    this.imgData.data[pos * 4 + 1] = pixel[1];
-    this.imgData.data[pos * 4 + 2] = pixel[2];
-    this.imgData.data[pos * 4 + 3] = pixel[3];
+    const scaledPos = pos * this.scale;
+    const scaledPw = this.scale * this.pw;
+    let _x, _y, _pos;
+    let _row = Math.floor(pos / this.pw);
+    for (_y = 0; _y < this.scale; _y++) {
+      for (_x = 0; _x < this.scale; _x++) {
+        _pos = scaledPos + ((_y + _row) * scaledPw) + _x;
+        this.imgData.data[_pos * 4 + 0] = pixel[0];
+        this.imgData.data[_pos * 4 + 1] = pixel[1];
+        this.imgData.data[_pos * 4 + 2] = pixel[2];
+        this.imgData.data[_pos * 4 + 3] = pixel[3];
+      }
+    }
   }
 
   _render () {
@@ -174,7 +180,7 @@ class TextMode {
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const tm = new TextMode(ctx);
+var tm = new TextMode(ctx);
 tm.moveTo(10,5);
 tm.print('JAM');
 
