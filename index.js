@@ -993,24 +993,24 @@ const palette = [//{
 ];//}
 
 class TextMode {
-  constructor (ctx, x=0, y=0, pw=320, ph=240, scale=2) {
+  constructor (ctx, x=0, y=0, pixelWidth=320, pixelHeight=240, scale=2) {
     this.ctx = ctx;
     this.x = x;
     this.y = y;
-    this.pw = pw;
-    this.ph = ph;
+    this.pixelWidth = pixelWidth;
+    this.pixelHeight = pixelHeight;
     this.scale = scale;
 
     // Font size is fixed for now. @FIXME.
-    this.fw = 8;
-    this.fh = 8;
+    this.fontWidth = 8;
+    this.fontHeight = 8;
 
     // Number of chars across and down.
-    this.tw = this.pw / this.fw;
-    this.th = this.ph / this.fh;
+    this.textWidth = this.pixelWidth / this.fontWidth;
+    this.textHeight = this.pixelHeight / this.fontHeight;
     
     // Total size in virtual (scaled) pixels.
-    this.size = pw * ph;
+    this.size = pixelWidth * pixelHeight;
     
     // @FIXME this is pretty gross.
     this.font = font;
@@ -1023,8 +1023,9 @@ class TextMode {
     this.bg = 0;
     this.fg = 1;
 
-    // Create the buffer, fill it with bg, and set up the render loop.
-    this.imgData = this.ctx.createImageData(this.pw * scale, this.ph * scale);
+    // Initialise the text and imagedata buffers and set up the render loop.
+    this.buffer = new Array(this.textWidth * this.textHeight);
+    this.imageData = this.ctx.createImageData(this.pixelWidth * scale, this.pixelHeight * scale);
     this.cls();
     this._render();
   }
@@ -1033,10 +1034,7 @@ class TextMode {
    * Fills the viewport with the background colour and moves the cursor to 0,0.
    */
   cls () {
-    const pixel = this.palette[this.bg];
-    for (let i = 0; i < this.size; i++) {
-      this._setPixel(i, pixel);
-    }
+    this.buffer.fill({bg: this.bg});
     this.moveTo(0, 0);
   }
 
@@ -1046,66 +1044,79 @@ class TextMode {
    * constrained to the viewport.
    */
   moveTo (row, col) {
-    this.row = Math.max(0, Math.min(this.tw - 1, row));
-    this.col = Math.max(0, Math.min(this.th - 1, col));
+    let _row = Math.max(0, Math.min(this.textWidth - 1, row));
+    let _col = Math.max(0, Math.min(this.textHeight - 1, col));
+    this.pos = (_row * this.textWidth) + _col;
   }
 
   print (text) {
-    text.split('').forEach(char => {
-      let charData = this.font[char.charCodeAt()];
-      if (charData !== undefined) {
-        charData.forEach((row, i) => {
-          let pixelPos = (this.col * this.fw) + (this.row * this.pw * this.fh) + (i * this.pw);
-          for (let mask = 1 << (this.fw - 1); mask; mask >>= 1) {
-            const pixel = this.palette[row & mask ? this.fg : this.bg];
-            this._setPixel(pixelPos, pixel);
-            pixelPos++;
-          }
-        });
-        this._forward();
-      }
-    })
+    text.split('').forEach(chr => {
+      const asciiCode = chr.charCodeAt();
+      this.buffer[this.pos] = {asciiCode, fg: this.fg, bg: this.bg};
+      this._forward();
+    });
   }
 
   _forward (n=1) {
-    this.col += n;
-    while (this.col >= this.tw) {
-      this.col -= this.tw;
-      this.row += 1;
-    }
-    while (this.row >= this.th) {
+    this.pos += n;
+    while (this.pos >= this.buffer.length) {
       this._scrollDown();
     }
   }
 
+  /*
+   * @TODO: implement
+   */
   _scrollDown (n=1) {
-    // @TODO: implement
-    // For now just overwrites the last row.
-    this.row = this.th - 1;
+    this.pos = this.buffer.length - 1;
   }
 
   /**
    * Sets a virtual (scaled) pixel.
    */
-  _setPixel (pos, pixel) {
-    const scaledPos = pos * this.scale;
-    const scaledPw = this.scale * this.pw;
-    const imgData = this.imgData.data;
-    let _row = Math.floor(pos / this.pw);
-    for (let _y = 0; _y < this.scale; _y++) {
-      for (let _x = 0; _x < this.scale; _x++) {
-        let _pos = scaledPos + ((_y + _row) * scaledPw) + _x;
-        imgData[_pos * 4 + 0] = pixel[0];
-        imgData[_pos * 4 + 1] = pixel[1];
-        imgData[_pos * 4 + 2] = pixel[2];
-        imgData[_pos * 4 + 3] = pixel[3];
+  _setPixel (pos, pixel, scale) {
+    scale = scale || this.scale;
+    if (scale > 1) {
+      const scaledPos = pos * scale;
+      const scaledPixelWidth = scale * this.pixelWidth;
+      for (let _x = 0; _x < scale; _x++) {
+        for (let _y = 0; _y < scale; _y++) {
+          let _row = Math.floor(pos / this.pixelWidth);
+          let _pos = scaledPos + ((_row - 1 + _y) * scaledPixelWidth) + _x;
+          this._setPixel(_pos, pixel, 1)
+        }
       }
+    } else {
+      const imageData = this.imageData.data;
+      imageData[pos * 4 + 0] = pixel[0];
+      imageData[pos * 4 + 1] = pixel[1];
+      imageData[pos * 4 + 2] = pixel[2];
+      imageData[pos * 4 + 3] = pixel[3];
     }
   }
 
   _render () {
-    this.ctx.putImageData(this.imgData, this.x, this.y);
+    this.buffer.forEach(({asciiCode, fg, bg}, pos) => {
+      const charData = this.font[asciiCode || 0] || (new Array(this.fontWidth)).fill(0);
+      this._renderChar(charData, fg, bg, pos);
+    });
+    this.ctx.putImageData(this.imageData, this.x, this.y);
     window.requestAnimationFrame(this._render.bind(this));
+  }
+
+  _renderChar (charData, fg, bg, textBufferPos) {
+    const {textWidth, fontWidth, pixelWidth, fontHeight} = this;
+    const textRow = Math.floor(textBufferPos / textWidth);
+    const textCol = textBufferPos % textWidth;
+    const pixelOrigin = (textCol * fontWidth) + (textRow * pixelWidth * fontHeight);
+    charData.forEach((charRow, charRowIndex) => {
+      let pixelPos = pixelOrigin + (charRowIndex * pixelWidth);
+      for (let mask = 1 << (fontWidth - 1); mask; mask >>= 1) {
+        const pixel = this.palette[charRow & mask ? fg : bg];
+        this._setPixel(pixelPos++, pixel);
+      }
+    });
+
   }
 }
 
