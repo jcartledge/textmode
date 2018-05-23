@@ -1099,8 +1099,7 @@ class TextMode {
     if (asciiCode < 32) {
       this._escape(asciiCode);
     } else {
-      const char = this.font.chr(asciiCode);
-      this.textBuffer[this.pos] = {char, fg: this.fg, bg: this.bg};
+      this.textBuffer[this.pos] = {asciiCode, fg: this.fg, bg: this.bg};
       this._forward();
     }
   }
@@ -1176,20 +1175,20 @@ class TextMode {
   }
 
   _render () {
-    this.textBuffer.forEach(({char, fg, bg}, pos) => {
-      this._renderChar(char, fg, bg, pos);
+    this.textBuffer.forEach(({asciiCode, fg, bg}, pos) => {
+      this._renderChar(asciiCode, fg, bg, pos);
     });
     this.imageData.data.set(this.buf8);
     this.ctx.putImageData(this.imageData, this.x, this.y);
     window.requestAnimationFrame(this._render.bind(this));
   }
 
-  _renderChar (charData, fg, bg, textBufferPos) {
+  _renderChar (asciiCode, fg, bg, textBufferPos) {
     const {textWidth, font, pixelWidth} = this;
     const textRow = Math.floor(textBufferPos / textWidth);
     const textCol = textBufferPos % textWidth;
     const pixelOrigin = (textCol * font.width) + (textRow * pixelWidth * font.height);
-    (charData || font.chr(0)).forEach((charRow, charRowIndex) => {
+    font.chr(asciiCode).forEach((charRow, charRowIndex) => {
       let pixelPos = pixelOrigin + (charRowIndex * pixelWidth);
       for (let mask = 1 << (font.width - 1); mask; mask >>= 1) {
         const pixel = this.palette[charRow & mask ? fg : bg];
