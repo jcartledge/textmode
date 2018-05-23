@@ -2,7 +2,6 @@
 textmode
 
 OK:
-- move the font stuff into a class and use a getter for the access
 - use this to implement side-effect chars e.g. beep and cr.
 - use diff/dirty to rerender only when needed.
 */
@@ -12,13 +11,29 @@ class TextModeFont {
     this.defineFont();
   }
   chr (charCode) {
-    return this.data[charCode];
+    return this.data[charCode] || new Uint8ClampedArray(this.height);
+  }
+  _beepFunc () {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioContext = AudioContext && new AudioContext();
+    return function beep () {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      osc.value = 440;
+      gain.connect(audioContext.destination);
+      gain.gain.value = 0.5;
+      osc.start(audioContext.currentTime);
+      osc.stop(audioContext.currentTime + 0.3);
+    }
   }
   defineFont () {
     this.width = 8;
     this.height = 8;
     this.data = [];
-    this.data[32] = Uint8Array.from([
+    this.data[7] = this._beepFunc();
+    this.data[32] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00000000,
@@ -28,7 +43,7 @@ class TextModeFont {
       0b00000000,
       0b00000000
     ]);
-    this.data[33] = Uint8Array.from([
+    this.data[33] = Uint8ClampedArray.from([
       0b00011000,
       0b00011000,
       0b00011000,
@@ -38,7 +53,7 @@ class TextModeFont {
       0b00011000,
       0b00000000
     ]);
-    this.data[34] = Uint8Array.from([
+    this.data[34] = Uint8ClampedArray.from([
       0b01101100,
       0b01101100,
       0b01101100,
@@ -48,7 +63,7 @@ class TextModeFont {
       0b00000000,
       0b00000000
     ]);
-    this.data[35] = Uint8Array.from([
+    this.data[35] = Uint8ClampedArray.from([
       0b01101100,
       0b01101100,
       0b11111110,
@@ -58,7 +73,7 @@ class TextModeFont {
       0b01101100,
       0b00000000
     ]);
-    this.data[36] = Uint8Array.from([
+    this.data[36] = Uint8ClampedArray.from([
       0b00011000,
       0b00111110,
       0b01011000,
@@ -68,7 +83,7 @@ class TextModeFont {
       0b00011000,
       0b00000000
     ]);
-    this.data[37] = Uint8Array.from([
+    this.data[37] = Uint8ClampedArray.from([
       0b00000000,
       0b11000110,
       0b11001100,
@@ -78,7 +93,7 @@ class TextModeFont {
       0b11000110,
       0b00000000
     ]);
-    this.data[38] = Uint8Array.from([
+    this.data[38] = Uint8ClampedArray.from([
       0b00111000,
       0b01101100,
       0b00111000,
@@ -88,7 +103,7 @@ class TextModeFont {
       0b01110110,
       0b00000000
     ]);
-    this.data[39] = Uint8Array.from([
+    this.data[39] = Uint8ClampedArray.from([
       0b00011000,
       0b00011000,
       0b00110000,
@@ -98,7 +113,7 @@ class TextModeFont {
       0b00000000,
       0b00000000
     ]);
-    this.data[40] = Uint8Array.from([
+    this.data[40] = Uint8ClampedArray.from([
       0b00001100,
       0b00011000,
       0b00110000,
@@ -108,7 +123,7 @@ class TextModeFont {
       0b00001100,
       0b00000000
     ]);
-    this.data[41] = Uint8Array.from([
+    this.data[41] = Uint8ClampedArray.from([
       0b00110000,
       0b00011000,
       0b00001100,
@@ -118,7 +133,7 @@ class TextModeFont {
       0b00110000,
       0b00000000
     ]);
-    this.data[42] = Uint8Array.from([
+    this.data[42] = Uint8ClampedArray.from([
       0b00000000,
       0b01100110,
       0b00111100,
@@ -128,7 +143,7 @@ class TextModeFont {
       0b00000000,
       0b00000000
     ]);
-    this.data[43] = Uint8Array.from([
+    this.data[43] = Uint8ClampedArray.from([
       0b00000000,
       0b00011000,
       0b00011000,
@@ -138,7 +153,7 @@ class TextModeFont {
       0b00000000,
       0b00000000
     ]);
-    this.data[44] = Uint8Array.from([
+    this.data[44] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00000000,
@@ -148,7 +163,7 @@ class TextModeFont {
       0b00011000,
       0b00110000
     ]);
-    this.data[45] = Uint8Array.from([
+    this.data[45] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00000000,
@@ -158,7 +173,7 @@ class TextModeFont {
       0b00000000,
       0b00000000
     ]);
-    this.data[46] = Uint8Array.from([
+    this.data[46] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00000000,
@@ -168,7 +183,7 @@ class TextModeFont {
       0b00011000,
       0b00000000
     ]);
-    this.data[47] = Uint8Array.from([
+    this.data[47] = Uint8ClampedArray.from([
       0b00000110,
       0b00001100,
       0b00011000,
@@ -178,7 +193,7 @@ class TextModeFont {
       0b10000000,
       0b00000000
     ]);
-    this.data[48] = Uint8Array.from([
+    this.data[48] = Uint8ClampedArray.from([
       0b01111100,
       0b11000110,
       0b11001110,
@@ -188,7 +203,7 @@ class TextModeFont {
       0b01111100,
       0b00000000
     ]);
-    this.data[49] = Uint8Array.from([
+    this.data[49] = Uint8ClampedArray.from([
       0b00011000,
       0b00111000,
       0b00011000,
@@ -198,7 +213,7 @@ class TextModeFont {
       0b01111110,
       0b00000000
     ]);
-    this.data[50] = Uint8Array.from([
+    this.data[50] = Uint8ClampedArray.from([
       0b00111100,
       0b01100110,
       0b00000110,
@@ -208,7 +223,7 @@ class TextModeFont {
       0b01111110,
       0b00000000
     ]);
-    this.data[51] = Uint8Array.from([
+    this.data[51] = Uint8ClampedArray.from([
       0b00111100,
       0b01100110,
       0b00000110,
@@ -218,7 +233,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[52] = Uint8Array.from([
+    this.data[52] = Uint8ClampedArray.from([
       0b00011100,
       0b00111100,
       0b01101100,
@@ -228,7 +243,7 @@ class TextModeFont {
       0b00011110,
       0b00000000
     ]);
-    this.data[53] = Uint8Array.from([
+    this.data[53] = Uint8ClampedArray.from([
       0b01111110,
       0b01100010,
       0b01100000,
@@ -238,7 +253,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[54] = Uint8Array.from([
+    this.data[54] = Uint8ClampedArray.from([
       0b00111100,
       0b01100110,
       0b01100000,
@@ -248,7 +263,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[55] = Uint8Array.from([
+    this.data[55] = Uint8ClampedArray.from([
       0b01111110,
       0b01100110,
       0b00000110,
@@ -258,7 +273,7 @@ class TextModeFont {
       0b00011000,
       0b00000000
     ]);
-    this.data[56] = Uint8Array.from([
+    this.data[56] = Uint8ClampedArray.from([
       0b00111100,
       0b01100110,
       0b01100110,
@@ -268,7 +283,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[57] = Uint8Array.from([
+    this.data[57] = Uint8ClampedArray.from([
       0b00111100,
       0b01100110,
       0b01100110,
@@ -278,7 +293,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[58] = Uint8Array.from([
+    this.data[58] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00011000,
@@ -288,7 +303,7 @@ class TextModeFont {
       0b00011000,
       0b00000000
     ]);
-    this.data[59] = Uint8Array.from([
+    this.data[59] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00011000,
@@ -298,7 +313,7 @@ class TextModeFont {
       0b00011000,
       0b00110000
     ]);
-    this.data[60] = Uint8Array.from([
+    this.data[60] = Uint8ClampedArray.from([
       0b00001100,
       0b00011000,
       0b00110000,
@@ -308,7 +323,7 @@ class TextModeFont {
       0b00001100,
       0b00000000
     ]);
-    this.data[61] = Uint8Array.from([
+    this.data[61] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b01111110,
@@ -318,7 +333,7 @@ class TextModeFont {
       0b00000000,
       0b00000000
     ]);
-    this.data[62] = Uint8Array.from([
+    this.data[62] = Uint8ClampedArray.from([
       0b01100000,
       0b00110000,
       0b00011000,
@@ -328,7 +343,7 @@ class TextModeFont {
       0b01100000,
       0b00000000
     ]);
-    this.data[63] = Uint8Array.from([
+    this.data[63] = Uint8ClampedArray.from([
       0b00111100,
       0b01100110,
       0b01100110,
@@ -338,7 +353,7 @@ class TextModeFont {
       0b00011000,
       0b00000000
     ]);
-    this.data[64] = Uint8Array.from([
+    this.data[64] = Uint8ClampedArray.from([
       0b01111100,
       0b11000110,
       0b11011110,
@@ -348,7 +363,7 @@ class TextModeFont {
       0b01111100,
       0b00000000
     ]);
-    this.data[65] = Uint8Array.from([
+    this.data[65] = Uint8ClampedArray.from([
       0b00011000,
       0b00111100,
       0b01100110,
@@ -358,7 +373,7 @@ class TextModeFont {
       0b01100110,
       0b00000000
     ]);
-    this.data[66] = Uint8Array.from([
+    this.data[66] = Uint8ClampedArray.from([
       0b11111100,
       0b01100110,
       0b01100110,
@@ -368,7 +383,7 @@ class TextModeFont {
       0b11111100,
       0b00000000
     ]);
-    this.data[67] = Uint8Array.from([
+    this.data[67] = Uint8ClampedArray.from([
       0b00111100,
       0b01100110,
       0b11000000,
@@ -378,7 +393,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[68] = Uint8Array.from([
+    this.data[68] = Uint8ClampedArray.from([
       0b11111000,
       0b01101100,
       0b01100110,
@@ -388,7 +403,7 @@ class TextModeFont {
       0b11111000,
       0b00000000
     ]);
-    this.data[69] = Uint8Array.from([
+    this.data[69] = Uint8ClampedArray.from([
       0b11111110,
       0b01100010,
       0b01101000,
@@ -398,7 +413,7 @@ class TextModeFont {
       0b11111110,
       0b00000000
     ]);
-    this.data[70] = Uint8Array.from([
+    this.data[70] = Uint8ClampedArray.from([
       0b11111110,
       0b01100010,
       0b01101000,
@@ -408,7 +423,7 @@ class TextModeFont {
       0b11110000,
       0b00000000
     ]);
-    this.data[71] = Uint8Array.from([
+    this.data[71] = Uint8ClampedArray.from([
       0b00111100,
       0b01100110,
       0b11000000,
@@ -418,7 +433,7 @@ class TextModeFont {
       0b00111110,
       0b00000000
     ]);
-    this.data[72] = Uint8Array.from([
+    this.data[72] = Uint8ClampedArray.from([
       0b01100110,
       0b01100110,
       0b01100110,
@@ -428,7 +443,7 @@ class TextModeFont {
       0b01100110,
       0b00000000
     ]);
-    this.data[73] = Uint8Array.from([
+    this.data[73] = Uint8ClampedArray.from([
       0b01111110,
       0b00011000,
       0b00011000,
@@ -438,7 +453,7 @@ class TextModeFont {
       0b01111110,
       0b00000000
     ]);
-    this.data[74] = Uint8Array.from([
+    this.data[74] = Uint8ClampedArray.from([
       0b00011110,
       0b00001100,
       0b00001100,
@@ -448,7 +463,7 @@ class TextModeFont {
       0b01111000,
       0b00000000
     ]);
-    this.data[75] = Uint8Array.from([
+    this.data[75] = Uint8ClampedArray.from([
       0b11100110,
       0b01100110,
       0b01101100,
@@ -458,7 +473,7 @@ class TextModeFont {
       0b11100110,
       0b00000000
     ]);
-    this.data[76] = Uint8Array.from([
+    this.data[76] = Uint8ClampedArray.from([
       0b11110000,
       0b01100000,
       0b01100000,
@@ -468,7 +483,7 @@ class TextModeFont {
       0b11111110,
       0b00000000
     ]);
-    this.data[77] = Uint8Array.from([
+    this.data[77] = Uint8ClampedArray.from([
       0b11000110,
       0b11101110,
       0b11111110,
@@ -478,7 +493,7 @@ class TextModeFont {
       0b11000110,
       0b00000000
     ]);
-    this.data[78] = Uint8Array.from([
+    this.data[78] = Uint8ClampedArray.from([
       0b11000110,
       0b11100110,
       0b11110110,
@@ -488,7 +503,7 @@ class TextModeFont {
       0b11000110,
       0b00000000
     ]);
-    this.data[79] = Uint8Array.from([
+    this.data[79] = Uint8ClampedArray.from([
       0b00111000,
       0b01101100,
       0b11000110,
@@ -498,7 +513,7 @@ class TextModeFont {
       0b00111000,
       0b00000000
     ]);
-    this.data[80] = Uint8Array.from([
+    this.data[80] = Uint8ClampedArray.from([
       0b11111100,
       0b01100110,
       0b01100110,
@@ -508,7 +523,7 @@ class TextModeFont {
       0b11110000,
       0b00000000
     ]);
-    this.data[81] = Uint8Array.from([
+    this.data[81] = Uint8ClampedArray.from([
       0b00111000,
       0b01101100,
       0b11000110,
@@ -518,7 +533,7 @@ class TextModeFont {
       0b01110110,
       0b00000000
     ]);
-    this.data[82] = Uint8Array.from([
+    this.data[82] = Uint8ClampedArray.from([
       0b11111100,
       0b01100110,
       0b01100110,
@@ -528,7 +543,7 @@ class TextModeFont {
       0b11100110,
       0b00000000
     ]);
-    this.data[83] = Uint8Array.from([
+    this.data[83] = Uint8ClampedArray.from([
       0b00111100,
       0b01100110,
       0b01100000,
@@ -538,7 +553,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[84] = Uint8Array.from([
+    this.data[84] = Uint8ClampedArray.from([
       0b01111110,
       0b01011010,
       0b00011000,
@@ -548,7 +563,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[85] = Uint8Array.from([
+    this.data[85] = Uint8ClampedArray.from([
       0b01100110,
       0b01100110,
       0b01100110,
@@ -558,7 +573,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[86] = Uint8Array.from([
+    this.data[86] = Uint8ClampedArray.from([
       0b01100110,
       0b01100110,
       0b01100110,
@@ -568,7 +583,7 @@ class TextModeFont {
       0b00011000,
       0b00000000
     ]);
-    this.data[87] = Uint8Array.from([
+    this.data[87] = Uint8ClampedArray.from([
       0b11000110,
       0b11000110,
       0b11000110,
@@ -578,7 +593,7 @@ class TextModeFont {
       0b11000110,
       0b00000000
     ]);
-    this.data[88] = Uint8Array.from([
+    this.data[88] = Uint8ClampedArray.from([
       0b11000110,
       0b01101100,
       0b00111000,
@@ -588,7 +603,7 @@ class TextModeFont {
       0b11000110,
       0b00000000
     ]);
-    this.data[89] = Uint8Array.from([
+    this.data[89] = Uint8ClampedArray.from([
       0b01100110,
       0b01100110,
       0b01100110,
@@ -598,7 +613,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[90] = Uint8Array.from([
+    this.data[90] = Uint8ClampedArray.from([
       0b11111110,
       0b11000110,
       0b10001100,
@@ -608,7 +623,7 @@ class TextModeFont {
       0b11111110,
       0b00000000
     ]);
-    this.data[91] = Uint8Array.from([
+    this.data[91] = Uint8ClampedArray.from([
       0b01111000,
       0b01100000,
       0b01100000,
@@ -618,7 +633,7 @@ class TextModeFont {
       0b01111000,
       0b00000000
     ]);
-    this.data[92] = Uint8Array.from([
+    this.data[92] = Uint8ClampedArray.from([
       0b11000000,
       0b01100000,
       0b00110000,
@@ -628,7 +643,7 @@ class TextModeFont {
       0b00000010,
       0b00000000
     ]);
-    this.data[93] = Uint8Array.from([
+    this.data[93] = Uint8ClampedArray.from([
       0b01111000,
       0b00011000,
       0b00011000,
@@ -638,7 +653,7 @@ class TextModeFont {
       0b01111000,
       0b00000000
     ]);
-    this.data[94] = Uint8Array.from([
+    this.data[94] = Uint8ClampedArray.from([
       0b00010000,
       0b00111000,
       0b01101100,
@@ -648,7 +663,7 @@ class TextModeFont {
       0b00000000,
       0b00000000
     ]);
-    this.data[95] = Uint8Array.from([
+    this.data[95] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00000000,
@@ -658,7 +673,7 @@ class TextModeFont {
       0b00000000,
       0b11111111
     ]);
-    this.data[96] = Uint8Array.from([
+    this.data[96] = Uint8ClampedArray.from([
       0b00110000,
       0b00011000,
       0b00001100,
@@ -668,7 +683,7 @@ class TextModeFont {
       0b00000000,
       0b00000000
     ]);
-    this.data[97] = Uint8Array.from([
+    this.data[97] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b01111000,
@@ -678,7 +693,7 @@ class TextModeFont {
       0b01110110,
       0b00000000
     ]);
-    this.data[98] = Uint8Array.from([
+    this.data[98] = Uint8ClampedArray.from([
       0b11100000,
       0b01100000,
       0b01111100,
@@ -688,7 +703,7 @@ class TextModeFont {
       0b11011100,
       0b00000000
     ]);
-    this.data[99] = Uint8Array.from([
+    this.data[99] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00111100,
@@ -698,7 +713,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[100] = Uint8Array.from([
+    this.data[100] = Uint8ClampedArray.from([
       0b00011100,
       0b00001100,
       0b01111100,
@@ -708,7 +723,7 @@ class TextModeFont {
       0b01110110,
       0b00000000
     ]);
-    this.data[101] = Uint8Array.from([
+    this.data[101] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00111100,
@@ -718,7 +733,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[102] = Uint8Array.from([
+    this.data[102] = Uint8ClampedArray.from([
       0b00011100,
       0b00110110,
       0b00110000,
@@ -728,7 +743,7 @@ class TextModeFont {
       0b01111000,
       0b00000000
     ]);
-    this.data[103] = Uint8Array.from([
+    this.data[103] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00111110,
@@ -738,7 +753,7 @@ class TextModeFont {
       0b00000110,
       0b01111100
     ]);
-    this.data[104] = Uint8Array.from([
+    this.data[104] = Uint8ClampedArray.from([
       0b11100000,
       0b01100000,
       0b01101100,
@@ -748,7 +763,7 @@ class TextModeFont {
       0b11100110,
       0b00000000
     ]);
-    this.data[105] = Uint8Array.from([
+    this.data[105] = Uint8ClampedArray.from([
       0b00011000,
       0b00000000,
       0b00111000,
@@ -758,7 +773,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[106] = Uint8Array.from([
+    this.data[106] = Uint8ClampedArray.from([
       0b00000110,
       0b00000000,
       0b00001110,
@@ -768,7 +783,7 @@ class TextModeFont {
       0b01100110,
       0b00111100
     ]);
-    this.data[107] = Uint8Array.from([
+    this.data[107] = Uint8ClampedArray.from([
       0b11100000,
       0b01100000,
       0b01100110,
@@ -778,7 +793,7 @@ class TextModeFont {
       0b11100110,
       0b00000000
     ]);
-    this.data[108] = Uint8Array.from([
+    this.data[108] = Uint8ClampedArray.from([
       0b00111000,
       0b00011000,
       0b00011000,
@@ -788,7 +803,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[109] = Uint8Array.from([
+    this.data[109] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b01101100,
@@ -798,7 +813,7 @@ class TextModeFont {
       0b11000110,
       0b00000000
     ]);
-    this.data[110] = Uint8Array.from([
+    this.data[110] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b11011100,
@@ -808,7 +823,7 @@ class TextModeFont {
       0b01100110,
       0b00000000
     ]);
-    this.data[111] = Uint8Array.from([
+    this.data[111] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00111100,
@@ -818,7 +833,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[112] = Uint8Array.from([
+    this.data[112] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b11011100,
@@ -828,7 +843,7 @@ class TextModeFont {
       0b01100000,
       0b11110000
     ]);
-    this.data[113] = Uint8Array.from([
+    this.data[113] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b01110110,
@@ -838,7 +853,7 @@ class TextModeFont {
       0b00001100,
       0b00011110
     ]);
-    this.data[114] = Uint8Array.from([
+    this.data[114] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b11011100,
@@ -848,7 +863,7 @@ class TextModeFont {
       0b11110000,
       0b00000000
     ]);
-    this.data[115] = Uint8Array.from([
+    this.data[115] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b00111100,
@@ -858,7 +873,7 @@ class TextModeFont {
       0b00111100,
       0b00000000
     ]);
-    this.data[116] = Uint8Array.from([
+    this.data[116] = Uint8ClampedArray.from([
       0b00110000,
       0b00110000,
       0b01111100,
@@ -868,7 +883,7 @@ class TextModeFont {
       0b00011100,
       0b00000000
     ]);
-    this.data[117] = Uint8Array.from([
+    this.data[117] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b01100110,
@@ -878,7 +893,7 @@ class TextModeFont {
       0b00111110,
       0b00000000
     ]);
-    this.data[118] = Uint8Array.from([
+    this.data[118] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b01100110,
@@ -888,7 +903,7 @@ class TextModeFont {
       0b00011000,
       0b00000000
     ]);
-    this.data[119] = Uint8Array.from([
+    this.data[119] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b11000110,
@@ -898,7 +913,7 @@ class TextModeFont {
       0b01101100,
       0b00000000
     ]);
-    this.data[120] = Uint8Array.from([
+    this.data[120] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b11000110,
@@ -908,7 +923,7 @@ class TextModeFont {
       0b11000110,
       0b00000000
     ]);
-    this.data[121] = Uint8Array.from([
+    this.data[121] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b01100110,
@@ -918,7 +933,7 @@ class TextModeFont {
       0b00000110,
       0b01111100
     ]);
-    this.data[122] = Uint8Array.from([
+    this.data[122] = Uint8ClampedArray.from([
       0b00000000,
       0b00000000,
       0b01111110,
@@ -928,7 +943,7 @@ class TextModeFont {
       0b01111110,
       0b00000000
     ]);
-    this.data[123] = Uint8Array.from([
+    this.data[123] = Uint8ClampedArray.from([
       0b00001110,
       0b00011000,
       0b00011000,
@@ -938,7 +953,7 @@ class TextModeFont {
       0b00001110,
       0b00000000
     ]);
-    this.data[124] = Uint8Array.from([
+    this.data[124] = Uint8ClampedArray.from([
       0b00011000,
       0b00011000,
       0b00011000,
@@ -948,7 +963,7 @@ class TextModeFont {
       0b00011000,
       0b00000000
     ]);
-    this.data[125] = Uint8Array.from([
+    this.data[125] = Uint8ClampedArray.from([
       0b01110000,
       0b00011000,
       0b00011000,
@@ -958,7 +973,7 @@ class TextModeFont {
       0b01110000,
       0b00000000
     ]);
-    this.data[126] = Uint8Array.from([
+    this.data[126] = Uint8ClampedArray.from([
       0b01110110,
       0b11011100,
       0b00000000,
@@ -1039,10 +1054,20 @@ class TextMode {
 
   print (text) {
     text.split('').forEach(chr => {
-      const asciiCode = chr.charCodeAt();
-      this.textBuffer[this.pos] = {asciiCode, fg: this.fg, bg: this.bg};
-      this._forward();
+      const asciiCode = chr.charCodeAt() || 0;
+      this.chr(asciiCode);
     });
+  }
+
+  chr(asciiCode) {
+    const char = this.font.chr(asciiCode);
+    if (typeof char === "function") {
+      // side effects
+      char(this);
+    } else {
+      this.textBuffer[this.pos] = {char, fg: this.fg, bg: this.bg};
+      this._forward();
+    }
   }
 
   _forward (n=1) {
@@ -1080,9 +1105,8 @@ class TextMode {
   }
 
   _render () {
-    this.textBuffer.forEach(({asciiCode, fg, bg}, pos) => {
-      const charData = this.font.chr(asciiCode || 0) || (new Array(this.font.width)).fill(0);
-      this._renderChar(charData, fg, bg, pos);
+    this.textBuffer.forEach(({char, fg, bg}, pos) => {
+      this._renderChar(char, fg, bg, pos);
     });
     this.imageData.data.set(this.buf8);
     this.ctx.putImageData(this.imageData, this.x, this.y);
@@ -1094,14 +1118,13 @@ class TextMode {
     const textRow = Math.floor(textBufferPos / textWidth);
     const textCol = textBufferPos % textWidth;
     const pixelOrigin = (textCol * font.width) + (textRow * pixelWidth * font.height);
-    charData.forEach((charRow, charRowIndex) => {
+    (charData || font.chr(0)).forEach((charRow, charRowIndex) => {
       let pixelPos = pixelOrigin + (charRowIndex * pixelWidth);
       for (let mask = 1 << (font.width - 1); mask; mask >>= 1) {
         const pixel = this.palette[charRow & mask ? fg : bg];
         this._setPixel(pixelPos++, pixel);
       }
     });
-
   }
 }
 
