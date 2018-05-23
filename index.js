@@ -3,14 +3,15 @@ textmode
 
 OK:
 - font
-  - implement CRLF
   - proper support for different sizes - e.g. 7x5
 - palette
   - class for palette - pass into constructor
-- render
-  - create canvas dynamically
+- tm
+  - (optionally) create canvas dynamically
+  - separate vscale and hscale
   - render callbacks
   - use diff/dirty to rerender only when needed.
+  - input
 */
 
 class TextModeFont {
@@ -20,31 +21,10 @@ class TextModeFont {
   chr (charCode) {
     return this.data[charCode] || new Uint8ClampedArray(this.height);
   }
-  _beepFunc () {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const audioContext = AudioContext && new AudioContext();
-    return function beep () {
-      if (!audioContext) return;
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      osc.connect(gain);
-      osc.value = 440;
-      gain.connect(audioContext.destination);
-      gain.gain.value = 0.5;
-      osc.start(audioContext.currentTime);
-      osc.stop(audioContext.currentTime + 0.3);
-    }
-  }
-  defineEscapeChars () {
-    this.data[7] = this._beepFunc();
-    this.data[10] = tm => tm.lf();
-    this.data[13] = tm => tm.cr();
-  }
   defineFont () {
     this.width = 8;
     this.height = 8;
     this.data = [];
-    this.defineEscapeChars();
     this.data[32] = Uint8ClampedArray.of(
       0b00000000,
       0b00000000,
@@ -1086,6 +1066,10 @@ class TextMode {
     this.lf();
   }
 
+  crlf () {
+    this.newLine();
+  }
+
   // Move the text insertion point to the first column of the current line.
   cr () {
     this.moveTo(this.row, 0);
@@ -1103,14 +1087,50 @@ class TextMode {
     });
   }
 
+  println (text) {
+    if (this.col !== 0) {
+      this.newLine();
+    }
+    this.print(text);
+    this.newLine();
+  }
+
   chr(asciiCode) {
-    const char = this.font.chr(asciiCode);
-    if (typeof char === "function") {
-      // side effects
-      char(this);
+    if (asciiCode < 32) {
+      this._escape(asciiCode);
     } else {
+      const char = this.font.chr(asciiCode);
       this.textBuffer[this.pos] = {char, fg: this.fg, bg: this.bg};
       this._forward();
+    }
+  }
+
+  beep (duration=0.3, freq=440, amp=0.5) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioContext = AudioContext && new AudioContext();
+    if (audioContext) {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      osc.value = freq;
+      gain.connect(audioContext.destination);
+      gain.gain.value = amp;
+      osc.start(audioContext.currentTime);
+      osc.stop(audioContext.currentTime + duration);
+    }
+  }
+
+  _escape (asciiCode) {
+    switch (asciiCode) {
+      case 7:
+        this.beep();
+        break;
+      case 10:
+        this.lf();
+        break;
+      case 13:
+        this.cr();
+        break;
     }
   }
 
