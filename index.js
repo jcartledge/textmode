@@ -982,14 +982,15 @@ function defineFont() {
 const font = defineFont();
 
 const palette = [//{
-  [0x00, 0x00, 0x00, 0xFF],
-  [0xFF, 0xFF, 0xFF, 0xFF],
-  [0xFF, 0x00, 0x00, 0xFF],
-  [0x00, 0xFF, 0x00, 0xFF],
-  [0x00, 0x00, 0xFF, 0xFF],
-  [0xFF, 0x00, 0xFF, 0xFF],
-  [0xFF, 0xFF, 0x00, 0xFF],
-  [0x00, 0xFF, 0xFF, 0xFF]
+  //AARRGGBB
+  0xFF000000,
+  0xFFFFFFFF,
+  0xFF0000FF,
+  0xFF00FF00,
+  0xFFFF0000,
+  0xFFFF00FF,
+  0xFF0000FF,
+  0xFFFFFF00
 ];//}
 
 class TextMode {
@@ -1024,8 +1025,11 @@ class TextMode {
     this.fg = 1;
 
     // Initialise the text and imagedata buffers and set up the render loop.
-    this.buffer = new Array(this.textWidth * this.textHeight);
+    this.textBuffer = new Array(this.textWidth * this.textHeight);
     this.imageData = this.ctx.createImageData(this.pixelWidth * scale, this.pixelHeight * scale);
+    const buf = new ArrayBuffer(this.imageData.data.length);
+    this.buf8 = new Uint8ClampedArray(buf);
+    this.buf32 = new Uint32Array(buf);
     this.cls();
     this._render();
   }
@@ -1034,7 +1038,7 @@ class TextMode {
    * Fills the viewport with the background colour and moves the cursor to 0,0.
    */
   cls () {
-    this.buffer.fill({bg: this.bg});
+    this.textBuffer.fill({bg: this.bg});
     this.moveTo(0, 0);
   }
 
@@ -1052,14 +1056,14 @@ class TextMode {
   print (text) {
     text.split('').forEach(chr => {
       const asciiCode = chr.charCodeAt();
-      this.buffer[this.pos] = {asciiCode, fg: this.fg, bg: this.bg};
+      this.textBuffer[this.pos] = {asciiCode, fg: this.fg, bg: this.bg};
       this._forward();
     });
   }
 
   _forward (n=1) {
     this.pos += n;
-    while (this.pos >= this.buffer.length) {
+    while (this.pos >= this.textBuffer.length) {
       this._scrollDown();
     }
   }
@@ -1068,7 +1072,7 @@ class TextMode {
    * @TODO: implement
    */
   _scrollDown (n=1) {
-    this.pos = this.buffer.length - 1;
+    this.pos = this.textBuffer.length - 1;
   }
 
   /**
@@ -1087,19 +1091,16 @@ class TextMode {
         }
       }
     } else {
-      const imageData = this.imageData.data;
-      imageData[pos * 4 + 0] = pixel[0];
-      imageData[pos * 4 + 1] = pixel[1];
-      imageData[pos * 4 + 2] = pixel[2];
-      imageData[pos * 4 + 3] = pixel[3];
+      this.buf32[pos] = pixel;
     }
   }
 
   _render () {
-    this.buffer.forEach(({asciiCode, fg, bg}, pos) => {
+    this.textBuffer.forEach(({asciiCode, fg, bg}, pos) => {
       const charData = this.font[asciiCode || 0] || (new Array(this.fontWidth)).fill(0);
       this._renderChar(charData, fg, bg, pos);
     });
+    this.imageData.data.set(this.buf8);
     this.ctx.putImageData(this.imageData, this.x, this.y);
     window.requestAnimationFrame(this._render.bind(this));
   }
