@@ -8,7 +8,6 @@ OK:
 - palette
   - class for palette - pass into constructor
 - tm
-  - separate vscale and hscale
   - render callbacks
   - use diff/dirty to rerender only when needed.
   - input
@@ -996,23 +995,23 @@ const palette = Uint32Array.from([//{
 ]);//}
 
 class TextMode {
-  constructor (canvas, numRows=30,  numCols=40, scale=2) {
+  constructor (canvas, numRows=30,  numCols=40, hscale=2, vscale=3) {
 
     // Number of chars across and down.
     this.numCols = numCols;
     this.numRows = numRows;
-    this.scale = scale;
+
+    // Scaling factors.
+    this.hscale = hscale;
+    this.vscale = vscale;
 
     this.font = new TextModeFont();
-
-    // Total size in virtual (scaled) pixels.
-    this.size = this.pixelWidth * this.pixelHeight;
 
     // Canvas.
     if (!canvas) {
       canvas = document.createElement('canvas');
-      canvas.width = this.pixelWidth * scale;
-      canvas.height = this.pixelHeight * scale;
+      canvas.width = this.realPixelWidth;
+      canvas.height = this.realPixelHeight;
     }
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -1028,7 +1027,7 @@ class TextMode {
     // Initialise the text and imagedata buffers and set up the render loop.
     this.pos = 0;
     this.textBuffer = new Array(this.numCols * this.numRows);
-    this.imageData = this.ctx.createImageData(this.pixelWidth * scale, this.pixelHeight * scale);
+    this.imageData = this.ctx.createImageData(this.realPixelWidth, this.realPixelHeight);
     const buf = new ArrayBuffer(this.imageData.data.length);
     this.buf8 = new Uint8ClampedArray(buf);
     this.buf32 = new Uint32Array(buf);
@@ -1036,12 +1035,20 @@ class TextMode {
     this._render();
   }
 
-  get pixelHeight () {
+  get virtualPixelHeight () {
     return this.font.height * this.numRows;
   }
 
-  get pixelWidth () {
+  get virtualPixelWidth () {
     return this.font.width * this.numCols;
+  }
+
+  get realPixelWidth () {
+    return this.virtualPixelWidth * this.hscale;
+  }
+
+  get realPixelHeight () {
+    return this.virtualPixelHeight * this.vscale;
   }
 
   get row () {
@@ -1173,23 +1180,12 @@ class TextMode {
   }
 
   /**
-   * Sets a virtual (scaled) pixel.
+   * Sets a pixel.
    */
-  _setPixel (pos, pixel, scale) {
-    scale = scale || this.scale;
-    if (scale > 1) {
-      const scaledPos = pos * scale;
-      const scaledPixelWidth = scale * this.pixelWidth;
-      for (let _x = 0; _x < scale; _x++) {
-        for (let _y = 0; _y < scale; _y++) {
-          let _row = Math.floor(pos / this.pixelWidth);
-          let _pos = scaledPos + ((_row - 1 + _y) * scaledPixelWidth) + _x;
-          this._setPixel(_pos, pixel, 1)
-        }
-      }
-    } else {
-      this.buf32[pos] = pixel;
-    }
+  _setPixel (virtualPixelPos, pixel) {
+    this._virtualPixelPosToRealPixels(virtualPixelPos).forEach(realPixelPos => {
+      this.buf32[realPixelPos] = pixel;
+    });
   }
 
   _render () {
@@ -1202,17 +1198,34 @@ class TextMode {
   }
 
   _renderChar (asciiCode, fg, bg, textBufferPos) {
-    const {numCols, font, pixelWidth} = this;
-    const textRow = Math.floor(textBufferPos / numCols);
-    const textCol = textBufferPos % numCols;
-    const pixelOrigin = (textCol * font.width) + (textRow * pixelWidth * font.height);
-    font.chr(asciiCode).forEach((charRow, charRowIndex) => {
-      let pixelPos = pixelOrigin + (charRowIndex * pixelWidth);
-      for (let mask = 1 << (font.width - 1); mask; mask >>= 1) {
+    const virtualPixelOrigin = this._textBufferPosToVirtualPixelPos(textBufferPos);
+    this.font.chr(asciiCode).forEach((charRow, charRowIndex) => {
+      let pixelPos = virtualPixelOrigin + (charRowIndex * this.virtualPixelWidth);
+      for (let mask = 1 << (this.font.width - 1); mask; mask >>= 1) {
         const pixel = this.palette[charRow & mask ? fg : bg];
         this._setPixel(pixelPos++, pixel);
       }
     });
+  }
+
+  _textBufferPosToVirtualPixelPos (textBufferPos) {
+    const {numCols, font, virtualPixelWidth} = this;
+    const textRow = Math.floor(textBufferPos / numCols);
+    const textCol = textBufferPos % numCols;
+    return (textCol * font.width) + (textRow * virtualPixelWidth * font.height);
+  }
+
+  _virtualPixelPosToRealPixels (virtualPixelPos) {
+    const {hscale, vscale, virtualPixelWidth, realPixelWidth} = this;
+    const realPixels = [];
+    const virtualPixelRow = Math.floor(virtualPixelPos / virtualPixelWidth);
+    const realOrigin = virtualPixelPos * hscale + (realPixelWidth * virtualPixelRow * (vscale - 1));
+    for (let x = 0; x < hscale; x++) {
+      for (let y = 0; y < vscale; y++) {
+        realPixels.push(realOrigin + (y * realPixelWidth) + x);
+      }
+    }
+    return realPixels;
   }
 }
 
