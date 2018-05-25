@@ -1013,6 +1013,7 @@ class TextMode {
     // Canvas.
     if (!canvas) {
       canvas = document.createElement('canvas');
+      canvas.tabIndex = 0;
       canvas.width = this.realPixelWidth;
       canvas.height = this.realPixelHeight;
     }
@@ -1162,6 +1163,31 @@ class TextMode {
       osc.stop(audioContext.currentTime + duration);
     }
     return this;
+  }
+
+  input (prompt='> ', cursor='_') {
+    this.print(prompt);
+    this.print(cursor);
+    return new Promise((resolve) => {
+      let input = '';
+      let key = 0;
+      const textModeInputListener = (e) => {
+        key = e.key.charCodeAt();
+        if (e.key.length === 1) {
+          input += e.key;
+          this.pos--;
+          this.print(e.key);
+          this.print(cursor);
+        } else if (e.keyCode === 13) {
+          this.canvas.removeEventListener('keypress', textModeInputListener);
+          this.pos--;
+          this.chr(32);
+          this.crlf();
+          resolve(input);
+        }
+      };
+      this.canvas.addEventListener('keypress', textModeInputListener);
+    });
   }
 
   _escape (asciiCode) {
