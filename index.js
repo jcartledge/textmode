@@ -8,7 +8,10 @@ OK:
 - palette
   - class for palette - pass into constructor
 - tm
-  - render callbacks
+  + render callbacks
+    + textModeBeforeRender
+    + textModeBeforeRenderChar
+    + textModeBeforeRenderRow
   - use diff/dirty to rerender only when needed.
   - input
 - demos
@@ -995,7 +998,7 @@ const palette = Uint32Array.from([//{
 ]);//}
 
 class TextMode {
-  constructor (canvas, numRows=30,  numCols=40, hscale=2, vscale=3) {
+  constructor (canvas, numRows=30,  numCols=40, hscale=4, vscale=4) {
 
     // Number of chars across and down.
     this.numCols = numCols;
@@ -1023,6 +1026,13 @@ class TextMode {
     this.palette = palette;
     this.bg = 0;
     this.fg = 1;
+
+    // Render events - these are off by default.
+    this.events = {
+      'BeforeRender': false,
+      'BeforeRenderChar': false,
+      'BeforeRenderCharRow': false
+    };
 
     // Initialise the text and imagedata buffers and set up the render loop.
     this.pos = 0;
@@ -1073,6 +1083,7 @@ class TextMode {
   cls () {
     this.textBuffer.fill({bg: this.bg});
     this.moveTo(0, 0);
+    return this;
   }
 
   /**
@@ -1083,26 +1094,31 @@ class TextMode {
   moveTo (row, col) {
     this.row = row;
     this.col = col;
+    return this;
   }
 
   // Move the text insertion point to the first column of the next line.
   newLine () {
     this.cr();
     this.lf();
+    return this;
   }
 
   crlf () {
     this.newLine();
+    return this;
   }
 
   // Move the text insertion point to the first column of the current line.
   cr () {
     this.moveTo(this.row, 0);
+    return this;
   }
 
   // Move the text insertion point to the same column on the next line.
   lf () {
     this.moveTo(this.row + 1, this.col);
+    return this;
   }
 
   print (text) {
@@ -1110,6 +1126,7 @@ class TextMode {
       const asciiCode = chr.charCodeAt() || 0;
       this.chr(asciiCode);
     });
+    return this;
   }
 
   println (text) {
@@ -1118,6 +1135,7 @@ class TextMode {
     }
     this.print(text);
     this.newLine();
+    return this;
   }
 
   chr(asciiCode) {
@@ -1126,6 +1144,7 @@ class TextMode {
     } else {
       this.textBuffer[this.pos] = {asciiCode, fg: this.fg, bg: this.bg};
       this._forward();
+      return this;
     }
   }
 
@@ -1142,6 +1161,7 @@ class TextMode {
       osc.start(audioContext.currentTime);
       osc.stop(audioContext.currentTime + duration);
     }
+    return this;
   }
 
   _escape (asciiCode) {
@@ -1189,6 +1209,7 @@ class TextMode {
   }
 
   _render () {
+    this._dispatchEvent('BeforeRender');
     this.textBuffer.forEach(({asciiCode, fg, bg}, pos) => {
       this._renderChar(asciiCode, fg, bg, pos);
     });
@@ -1198,11 +1219,15 @@ class TextMode {
   }
 
   _renderChar (asciiCode, fg, bg, textBufferPos) {
-    const virtualPixelOrigin = this._textBufferPosToVirtualPixelPos(textBufferPos);
-    this.font.chr(asciiCode).forEach((charRow, charRowIndex) => {
+    let args = {asciiCode, fg, bg, textBufferPos}
+    this._dispatchEvent('BeforeRenderChar', {args});
+    const virtualPixelOrigin = this._textBufferPosToVirtualPixelPos(args.textBufferPos);
+    this.font.chr(args.asciiCode).forEach((charRow, charRowIndex) => {
+      args = {...args, charRowIndex};
+      this._dispatchEvent('BeforeRenderCharRow', {args});
       let pixelPos = virtualPixelOrigin + (charRowIndex * this.virtualPixelWidth);
       for (let mask = 1 << (this.font.width - 1); mask; mask >>= 1) {
-        const pixel = this.palette[charRow & mask ? fg : bg];
+        const pixel = this.palette[charRow & mask ? args.fg : args.bg];
         this._setPixel(pixelPos++, pixel);
       }
     });
@@ -1227,14 +1252,33 @@ class TextMode {
     }
     return realPixels;
   }
+
+  _dispatchEvent (name, extraDetail={}) {
+    if (this.events[name]) {
+      const detail = Object.assign({textMode: this}, extraDetail);
+      this.canvas.dispatchEvent(new CustomEvent(`textMode${name}`, {detail}));
+    }
+  }
 }
 
 var tm = new TextMode();
 document.body.appendChild(tm.canvas);
 
+tm.canvas.addEventListener('textModeBeforeRenderChar', e => {
+  const {args} = event.detail;
+  if (args.asciiCode) {
+    args.bg = args.asciiCode % 8;
+  }
+});
+
+tm.canvas.addEventListener('textModeBeforeRenderCharRow', e => {
+  const {args} = event.detail;
+  if (args.asciiCode) {
+    args.fg = args.charRowIndex % 7 + 1;
+  }
+});
+
 for (let i = 32; i < 127; i++) {
-  // tm.bg = i % 8;
-  // tm.fg = (i + 3) % 7 + 1;
   tm.print(String.fromCharCode(i));
 }
 
