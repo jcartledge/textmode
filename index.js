@@ -3,15 +3,20 @@ textmode
 
 OK:
 - font
-  - proper support for different sizes - e.g. 7x5
+  - proper support for different sizes - e.g. 7x5 (requires perf measurement?)
+  - should be passed to the tm constructor as well?
 - palette
   - class for palette - pass into constructor
 - tm
-  - (optionally) create canvas dynamically
   - separate vscale and hscale
   - render callbacks
   - use diff/dirty to rerender only when needed.
   - input
+- demos
+  - colour cycling
+  - render callbacks
+- tests?
+- flow/ts
 */
 
 class TextModeFont {
@@ -991,21 +996,26 @@ const palette = Uint32Array.from([//{
 ]);//}
 
 class TextMode {
-  constructor (ctx, x=0, y=0, pixelWidth=320, pixelHeight=240, scale=2) {
-    this.ctx = ctx;
-    this.x = x;
-    this.y = y;
-    this.pixelWidth = pixelWidth;
-    this.pixelHeight = pixelHeight;
-    this.scale = scale;
+  constructor (canvas, numRows=30,  numCols=40, scale=2) {
 
     // Number of chars across and down.
+    this.numCols = numCols;
+    this.numRows = numRows;
+    this.scale = scale;
+
     this.font = new TextModeFont();
-    this.textWidth = this.pixelWidth / this.font.width;
-    this.textHeight = this.pixelHeight / this.font.height;
-    
+
     // Total size in virtual (scaled) pixels.
-    this.size = pixelWidth * pixelHeight;
+    this.size = this.pixelWidth * this.pixelHeight;
+
+    // Canvas.
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.width = this.pixelWidth * scale;
+      canvas.height = this.pixelHeight * scale;
+    }
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
 
     // Indexed color palette.
     // Fg and bg refer to a palette index.
@@ -1017,7 +1027,7 @@ class TextMode {
 
     // Initialise the text and imagedata buffers and set up the render loop.
     this.pos = 0;
-    this.textBuffer = new Array(this.textWidth * this.textHeight);
+    this.textBuffer = new Array(this.numCols * this.numRows);
     this.imageData = this.ctx.createImageData(this.pixelWidth * scale, this.pixelHeight * scale);
     const buf = new ArrayBuffer(this.imageData.data.length);
     this.buf8 = new Uint8ClampedArray(buf);
@@ -1026,20 +1036,28 @@ class TextMode {
     this._render();
   }
 
+  get pixelHeight () {
+    return this.font.height * this.numRows;
+  }
+
+  get pixelWidth () {
+    return this.font.width * this.numCols;
+  }
+
   get row () {
-    return Math.floor(this.pos / this.textWidth);
+    return Math.floor(this.pos / this.numCols);
   }
 
   set row (_row) {
-    this._setPos(Math.max(0, Math.min(this.textHeight - 1, _row)), this.col);
+    this._setPos(Math.max(0, Math.min(this.numRows - 1, _row)), this.col);
   }
 
   get col() {
-    return this.pos % this.textWidth;
+    return this.pos % this.numCols;
   }
 
   set col (_col) {
-    this._setPos(this.row, Math.max(0, Math.min(this.textWidth - 1, _col)));
+    this._setPos(this.row, Math.max(0, Math.min(this.numCols - 1, _col)));
   }
 
   /**
@@ -1137,7 +1155,7 @@ class TextMode {
    * This does not check input.
    */
   _setPos(row, col) {
-    this.pos = (row * this.textWidth) + col;
+    this.pos = (row * this.numCols) + col;
   }
 
   _forward (n=1) {
@@ -1179,14 +1197,14 @@ class TextMode {
       this._renderChar(asciiCode, fg, bg, pos);
     });
     this.imageData.data.set(this.buf8);
-    this.ctx.putImageData(this.imageData, this.x, this.y);
+    this.ctx.putImageData(this.imageData, 0, 0);
     window.requestAnimationFrame(this._render.bind(this));
   }
 
   _renderChar (asciiCode, fg, bg, textBufferPos) {
-    const {textWidth, font, pixelWidth} = this;
-    const textRow = Math.floor(textBufferPos / textWidth);
-    const textCol = textBufferPos % textWidth;
+    const {numCols, font, pixelWidth} = this;
+    const textRow = Math.floor(textBufferPos / numCols);
+    const textCol = textBufferPos % numCols;
     const pixelOrigin = (textCol * font.width) + (textRow * pixelWidth * font.height);
     font.chr(asciiCode).forEach((charRow, charRowIndex) => {
       let pixelPos = pixelOrigin + (charRowIndex * pixelWidth);
@@ -1198,13 +1216,12 @@ class TextMode {
   }
 }
 
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-var tm = new TextMode(ctx);
+var tm = new TextMode();
+document.body.appendChild(tm.canvas);
 
 for (let i = 32; i < 127; i++) {
-//   tm.bg = i % 8;
-//   tm.fg = (i + 1) % 8;
+  // tm.bg = i % 8;
+  // tm.fg = (i + 3) % 7 + 1;
   tm.print(String.fromCharCode(i));
 }
 
