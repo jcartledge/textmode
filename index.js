@@ -13,7 +13,11 @@ OK:
     + textModeBeforeRenderChar
     + textModeBeforeRenderRow
   - use diff/dirty to rerender only when needed.
-  - input
+  - offScreenCanvas for render and scaling
+    - fps - debug mode
+  - profiling
+  + input
+    - delete
 - demos
   - colour cycling
   - render callbacks
@@ -998,7 +1002,7 @@ const palette = Uint32Array.from([//{
 ]);//}
 
 class TextMode {
-  constructor (canvas, numRows=30,  numCols=40, hscale=4, vscale=4) {
+  constructor (canvas, numRows=30,  numCols=40, hscale=2, vscale=2) {
 
     // Number of chars across and down.
     this.numCols = numCols;
@@ -1076,6 +1080,15 @@ class TextMode {
 
   set col (_col) {
     this._setPos(this.row, Math.max(0, Math.min(this.numCols - 1, _col)));
+  }
+
+  set debug (flag) {
+    this._debug = !!flag;
+    if (this._debug) {
+      this._attachFPSMonitor();
+    } else {
+      this._detachFPSMonitor();
+    }
   }
 
   /**
@@ -1168,11 +1181,11 @@ class TextMode {
   input (prompt='> ', cursor='_') {
     this.print(prompt);
     this.print(cursor);
+    this.canvas.focus();
     return new Promise((resolve) => {
       let input = '';
-      let key = 0;
       const textModeInputListener = (e) => {
-        key = e.key.charCodeAt();
+        let key = e.key.charCodeAt();
         if (e.key.length === 1) {
           input += e.key;
           this.pos--;
@@ -1181,7 +1194,7 @@ class TextMode {
         } else if (e.keyCode === 13) {
           this.canvas.removeEventListener('keypress', textModeInputListener);
           this.pos--;
-          this.chr(32);
+          this.chr();
           this.crlf();
           resolve(input);
         }
@@ -1235,6 +1248,9 @@ class TextMode {
   }
 
   _render () {
+    if (this._debug && this._fpsMonitor) {
+      this._updateFPSMonitor();
+    }
     this._dispatchEvent('BeforeRender');
     this.textBuffer.forEach(({asciiCode, fg, bg}, pos) => {
       this._renderChar(asciiCode, fg, bg, pos);
@@ -1284,6 +1300,27 @@ class TextMode {
       const detail = Object.assign({textMode: this}, extraDetail);
       this.canvas.dispatchEvent(new CustomEvent(`textMode${name}`, {detail}));
     }
+  }
+
+  _attachFPSMonitor () {
+    if (!this._fpsMonitor) {
+      this._fpsMonitor = document.createElement('input');
+      document.body.appendChild(this._fpsMonitor);
+    }
+  }
+
+  _detachFPSMonitor () {
+    if (this._fpsMonitor) {
+      this._fpsMonitor.parentNode.removeChild(this._fpsMonitor);
+      delete this._fpsMonitor;
+    }
+  }
+
+  _updateFPSMonitor () {
+    const time = (new Date()).getTime();
+    const elapsed = time - (this._lastRenderTime || 0);
+    this._lastRenderTime = time;
+    this._fpsMonitor.value = (1000 / elapsed);
   }
 }
 
