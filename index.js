@@ -13,8 +13,10 @@ OK:
     + textModeBeforeRenderChar
     + textModeBeforeRenderRow
   - use diff/dirty to rerender only when needed.
-  - offScreenCanvas for render and scaling
-    - fps - debug mode
+  - blitter technique
+    - create a hidden canvas - font size
+    - render each char into it at 1:1
+    - copy to origin at scale
   - profiling
   + input
     - delete
@@ -1002,7 +1004,7 @@ const palette = Uint32Array.from([//{
 ]);//}
 
 class TextMode {
-  constructor (canvas, numRows=30,  numCols=40, hscale=2, vscale=2) {
+  constructor (canvas, numRows=30,  numCols=40, hscale=3, vscale=5) {
 
     // Number of chars across and down.
     this.numCols = numCols;
@@ -1023,6 +1025,7 @@ class TextMode {
     }
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    this.ctx.imageSmoothingEnabled = false;
 
     // Indexed color palette.
     // Fg and bg refer to a palette index.
@@ -1042,10 +1045,17 @@ class TextMode {
     // Initialise the text and imagedata buffers and set up the render loop.
     this.pos = 0;
     this.textBuffer = new Array(this.numCols * this.numRows);
-    this.imageData = this.ctx.createImageData(this.realPixelWidth, this.realPixelHeight);
-    const buf = new ArrayBuffer(this.imageData.data.length);
+
+    // Hidden canvas used for rendering and scaling.
+    this.hiddenCanvas = document.createElement('canvas');
+    this.hiddenCanvas.width = this.font.width;
+    this.hiddenCanvas.height = this.font.height;
+    this.hiddenContext = this.hiddenCanvas.getContext('2d');
+    this.hiddenImageData =  this.hiddenContext.createImageData(this.font.width, this.font.height);
+    const buf = new ArrayBuffer(this.hiddenImageData.data.length);
     this.buf8 = new Uint8ClampedArray(buf);
     this.buf32 = new Uint32Array(buf);
+
     this.cls();
     this._render();
   }
@@ -1067,7 +1077,7 @@ class TextMode {
   }
 
   get row () {
-    return Math.floor(this.pos / this.numCols);
+    return this._rowFromPos(this.pos);
   }
 
   set row (_row) {
@@ -1075,7 +1085,7 @@ class TextMode {
   }
 
   get col() {
-    return this.pos % this.numCols;
+    return this._colFromPos(this.pos);
   }
 
   set col (_col) {
@@ -1224,6 +1234,14 @@ class TextMode {
     this.pos = (row * this.numCols) + col;
   }
 
+  _rowFromPos (pos) {
+    return pos / this.numCols | 0;
+  }
+
+  _colFromPos(pos) {
+    return pos % this.numCols;
+  }
+
   _forward (n=1) {
     this.pos += n;
     while (this.pos >= this.textBuffer.length) {
@@ -1238,15 +1256,6 @@ class TextMode {
     this.pos = this.textBuffer.length - 1;
   }
 
-  /**
-   * Sets a pixel.
-   */
-  _setPixel (virtualPixelPos, pixel) {
-    this._virtualPixelPosToRealPixels(virtualPixelPos).forEach(realPixelPos => {
-      this.buf32[realPixelPos] = pixel;
-    });
-  }
-
   _render () {
     if (this._debug && this._fpsMonitor) {
       this._updateFPSMonitor();
@@ -1255,44 +1264,30 @@ class TextMode {
     this.textBuffer.forEach(({asciiCode, fg, bg}, pos) => {
       this._renderChar(asciiCode, fg, bg, pos);
     });
-    this.imageData.data.set(this.buf8);
-    this.ctx.putImageData(this.imageData, 0, 0);
     window.requestAnimationFrame(this._render.bind(this));
   }
 
   _renderChar (asciiCode, fg, bg, textBufferPos) {
     let args = {asciiCode, fg, bg, textBufferPos}
     this._dispatchEvent('BeforeRenderChar', {args});
-    const virtualPixelOrigin = this._textBufferPosToVirtualPixelPos(args.textBufferPos);
+    let pixelPos = 0;
     this.font.chr(args.asciiCode).forEach((charRow, charRowIndex) => {
       args = {...args, charRowIndex};
       this._dispatchEvent('BeforeRenderCharRow', {args});
-      let pixelPos = virtualPixelOrigin + (charRowIndex * this.virtualPixelWidth);
       for (let mask = 1 << (this.font.width - 1); mask; mask >>= 1) {
         const pixel = this.palette[charRow & mask ? args.fg : args.bg];
-        this._setPixel(pixelPos++, pixel);
+        this.buf32[pixelPos++] = pixel;
       }
     });
-  }
-
-  _textBufferPosToVirtualPixelPos (textBufferPos) {
-    const {numCols, font, virtualPixelWidth} = this;
-    const textRow = Math.floor(textBufferPos / numCols);
-    const textCol = textBufferPos % numCols;
-    return (textCol * font.width) + (textRow * virtualPixelWidth * font.height);
-  }
-
-  _virtualPixelPosToRealPixels (virtualPixelPos) {
-    const {hscale, vscale, virtualPixelWidth, realPixelWidth} = this;
-    const realPixels = [];
-    const virtualPixelRow = Math.floor(virtualPixelPos / virtualPixelWidth);
-    const realOrigin = virtualPixelPos * hscale + (realPixelWidth * virtualPixelRow * (vscale - 1));
-    for (let x = 0; x < hscale; x++) {
-      for (let y = 0; y < vscale; y++) {
-        realPixels.push(realOrigin + (y * realPixelWidth) + x);
-      }
-    }
-    return realPixels;
+    this.hiddenImageData.data.set(this.buf8);
+    this.hiddenContext.putImageData(this.hiddenImageData, 0, 0);
+    const row = this._rowFromPos(textBufferPos);
+    const col = this._colFromPos(textBufferPos);
+    const dw = this.font.width * this.hscale;
+    const dh = this.font.height * this.vscale;
+    const dx = col * dw;
+    const dy = row * dh;
+    this.ctx.drawImage(this.hiddenCanvas, dx, dy, dw, dh);
   }
 
   _dispatchEvent (name, extraDetail={}) {
@@ -1320,7 +1315,7 @@ class TextMode {
     const time = (new Date()).getTime();
     const elapsed = time - (this._lastRenderTime || 0);
     this._lastRenderTime = time;
-    this._fpsMonitor.value = (1000 / elapsed);
+    this._fpsMonitor.value = (1000 / elapsed) | 0;
   }
 }
 
