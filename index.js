@@ -13,10 +13,6 @@ OK:
     + textModeBeforeRenderChar
     + textModeBeforeRenderRow
   - use diff/dirty to rerender only when needed.
-  - blitter technique
-    - create a hidden canvas - font size
-    - render each char into it at 1:1
-    - copy to origin at scale
   - profiling
   + input
     - delete
@@ -1004,7 +1000,7 @@ const palette = Uint32Array.from([//{
 ]);//}
 
 class TextMode {
-  constructor (canvas, numRows=30,  numCols=40, hscale=3, vscale=5) {
+  constructor (canvas, numRows=30,  numCols=40, hscale=2, vscale=3) {
 
     // Number of chars across and down.
     this.numCols = numCols;
@@ -1047,15 +1043,24 @@ class TextMode {
     this.textBuffer = new Array(this.numCols * this.numRows);
 
     // Hidden canvas used for rendering and scaling.
-    this.hiddenCanvas = document.createElement('canvas');
-    this.hiddenCanvas.width = this.font.width;
-    this.hiddenCanvas.height = this.font.height;
-    this.hiddenContext = this.hiddenCanvas.getContext('2d');
-    this.hiddenImageData =  this.hiddenContext.createImageData(this.font.width, this.font.height);
-    const buf = new ArrayBuffer(this.hiddenImageData.data.length);
-    this.buf8 = new Uint8ClampedArray(buf);
-    this.buf32 = new Uint32Array(buf);
-
+    const [w, h] = [this.font.width, this.font.height];
+    this.canvasBuffer = new Array(this.textBuffer.length).fill(0).map(_ => {
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.createImageData(w, h);
+      const buf = new ArrayBuffer(imageData.data.length);
+      const buf8 = new Uint8ClampedArray(buf);
+      const buf32 = new Uint32Array(buf);
+      return {
+        canvas,
+        ctx,
+        imageData,
+        buf8,
+        buf32
+      };
+    });
     this.cls();
     this._render();
   }
@@ -1188,12 +1193,22 @@ class TextMode {
     return this;
   }
 
+  backspace (stop=0) {
+    if (this.pos - 1 >= stop) {
+      this.pos -= 1;
+      this.textBuffer[this.pos].asciiCode = 0;
+    } else {
+      this.beep();
+    }
+  }
+
   input (prompt='> ', cursor='_') {
     this.print(prompt);
     this.print(cursor);
     this.canvas.focus();
     return new Promise((resolve) => {
       let input = '';
+      let start = this.pos - 1;
       const textModeInputListener = (e) => {
         let key = e.key.charCodeAt();
         if (e.key.length === 1) {
@@ -1201,12 +1216,22 @@ class TextMode {
           this.pos--;
           this.print(e.key);
           this.print(cursor);
-        } else if (e.keyCode === 13) {
-          this.canvas.removeEventListener('keypress', textModeInputListener);
-          this.pos--;
-          this.chr();
-          this.crlf();
-          resolve(input);
+        } else {
+          switch (e.keyCode) {
+            case 8:
+              this.backspace(start);
+              this.backspace(start);
+              input = input.slice(0, -1);
+              this.print(cursor);
+              break;
+            case 13:
+              this.canvas.removeEventListener('keypress', textModeInputListener);
+              this.pos--;
+              this.chr();
+              this.crlf();
+              resolve(input);
+              break;
+          }
         }
       };
       this.canvas.addEventListener('keypress', textModeInputListener);
@@ -1217,6 +1242,9 @@ class TextMode {
     switch (asciiCode) {
       case 7:
         this.beep();
+        break;
+      case 8:
+        this.backspace();
         break;
       case 10:
         this.lf();
@@ -1268,26 +1296,31 @@ class TextMode {
   }
 
   _renderChar (asciiCode, fg, bg, textBufferPos) {
-    let args = {asciiCode, fg, bg, textBufferPos}
+    const cursor = this.cursor && (this.pos == textBufferPos);
+    if (cursor) {
+      [fg, bg] = [this.bg, this.fg];
+    }
+    let args = {asciiCode, fg, bg, textBufferPos, cursor};
     this._dispatchEvent('BeforeRenderChar', {args});
+    const canvasBuffer = this.canvasBuffer[textBufferPos];
     let pixelPos = 0;
     this.font.chr(args.asciiCode).forEach((charRow, charRowIndex) => {
       args = {...args, charRowIndex};
       this._dispatchEvent('BeforeRenderCharRow', {args});
       for (let mask = 1 << (this.font.width - 1); mask; mask >>= 1) {
-        const pixel = this.palette[charRow & mask ? args.fg : args.bg];
-        this.buf32[pixelPos++] = pixel;
+        const pixel = this.palette[charRow & mask ? fg : bg];
+        canvasBuffer.buf32[pixelPos++] = pixel;
       }
     });
-    this.hiddenImageData.data.set(this.buf8);
-    this.hiddenContext.putImageData(this.hiddenImageData, 0, 0);
+    canvasBuffer.imageData.data.set(canvasBuffer.buf8);
+    canvasBuffer.ctx.putImageData(canvasBuffer.imageData, 0, 0);
     const row = this._rowFromPos(textBufferPos);
     const col = this._colFromPos(textBufferPos);
     const dw = this.font.width * this.hscale;
     const dh = this.font.height * this.vscale;
     const dx = col * dw;
     const dy = row * dh;
-    this.ctx.drawImage(this.hiddenCanvas, dx, dy, dw, dh);
+    this.ctx.drawImage(canvasBuffer.canvas, dx, dy, dw, dh);
   }
 
   _dispatchEvent (name, extraDetail={}) {
