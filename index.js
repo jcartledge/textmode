@@ -1200,35 +1200,33 @@ class TextMode {
     } else {
       this.beep();
     }
+    return this;
   }
 
-  input (prompt='> ', cursor='_') {
+  input (prompt='> ') {
+    const saveCursor = this.cursor;
+    this.cursor = true;
     this.print(prompt);
-    this.print(cursor);
     this.canvas.focus();
     return new Promise((resolve) => {
       let input = '';
-      let start = this.pos - 1;
+      let start = this.pos;
       const textModeInputListener = (e) => {
         let key = e.key.charCodeAt();
         if (e.key.length === 1) {
           input += e.key;
-          this.pos--;
           this.print(e.key);
-          this.print(cursor);
         } else {
           switch (e.keyCode) {
             case 8:
               this.backspace(start);
-              this.backspace(start);
               input = input.slice(0, -1);
-              this.print(cursor);
               break;
             case 13:
               this.canvas.removeEventListener('keypress', textModeInputListener);
-              this.pos--;
               this.chr();
               this.crlf();
+              this.cursor = saveCursor;
               resolve(input);
               break;
           }
