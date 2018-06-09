@@ -4,6 +4,7 @@ import menu from './demos/menu.js';
 const tm = new TextMode({hscale: 2, vscale: 3, numRows: 20});
 document.body.appendChild(tm.canvas);
 menu(tm);
+window.tm = tm;
 
 // tm.canvas.addEventListener('textModeBeforeRenderChar', e => {
 //   const {args} = event.detail;
