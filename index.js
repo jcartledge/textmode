@@ -1,6 +1,6 @@
 import {TextMode} from './lib/textMode.js';
 
-const tm = new TextMode();
+const tm = new TextMode({hscale: 2, vscale: 3});
 document.body.appendChild(tm.canvas);
 
 tm.canvas.addEventListener('textModeBeforeRenderChar', e => {
