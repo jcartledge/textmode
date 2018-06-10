@@ -1,10 +1,27 @@
+import drawMenu from '../util/drawMenu.js';
+
+function checkBox (state) {
+  return `[${state ? 'x' : ' '}]`;
+}
+
 function eventsDemo (tm, backToMenu) {
-  tm.cls();
-  for (let i = 32; i < 127; i++) {
-    tm.print(String.fromCharCode(i));
+  function eventState (event) {
+    return tm.events[event];
   }
-  tm.println('Press any key');
-tm.getKey().then(backToMenu);
+  function toggleEvent (event) {
+    tm.events[event] = !tm.events[event];
+  }
+  const menuItems = Object.keys(tm.events).map(event => {
+    return [
+      `${checkBox(eventState(event))} ${event}`,
+      (tm, back) => { toggleEvent(event); back(); }
+    ];
+  });
+  menuItems.push(['<- Back to menu', backToMenu]);
+  tm.cls().println();
+  tm.center('*** Events ***').println();
+  tm.println();
+  drawMenu(tm, menuItems, _ => eventsDemo(tm, backToMenu));
 }
 
 // tm.canvas.addEventListener('textModeBeforeRenderChar', e => {

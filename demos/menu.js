@@ -1,8 +1,8 @@
 import drawMenu from '../util/drawMenu.js';
 import eventsDemo from './events.js';
-const colourCyclingDemo = _ => console.log('colourCycling');
-const fontsDemo = _ => console.log('fonts');
-const inputDemo = _ => console.log('input');
+import colourCyclingDemo from './colourCycling.js';
+import fontsDemo from './fonts.js';
+import inputDemo from './input.js';
 
 const menuItems = [
   ['1. Events', eventsDemo],
@@ -13,7 +13,6 @@ const menuItems = [
 
 function menu(tm) {
   tm.cls();
-  tm.moveTo(0, 0);
   tm.println();
   tm.center('*** TEXTMODE ***');
   tm.println();
