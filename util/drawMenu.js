@@ -1,11 +1,13 @@
 let selectedMenuItem = 0;
 
 function drawMenu (tm, menuItems, backToMenu) {
+  const longestItemLabel = menuItems.reduce((acc, [item]) => Math.max(acc, item.length), 0);
   menuItems.map(([item], i) => {
+    const label = item.padEnd(longestItemLabel);
     if (i === selectedMenuItem) {
-      tm.inv().center(item).inv();
+      tm.inv().center(`> ${label}  `).inv();
     } else {
-      tm.center(item);
+      tm.center(`  ${label}  `);
     }
   });
   tm.getKey().then(e => {
@@ -17,6 +19,7 @@ function drawMenu (tm, menuItems, backToMenu) {
         selectedMenuItem = Math.min(menuItems.length - 1, selectedMenuItem + 1);
         break;
       case 'Enter':
+      case ' ':
         menuItems[selectedMenuItem][1](tm, backToMenu);
         return;
     }

@@ -5,10 +5,10 @@ import fontsDemo from './fonts.js';
 import inputDemo from './input.js';
 
 const menuItems = [
-  ['1. Events', eventsDemo],
-  ['2. Colour cycling', colourCyclingDemo],
-  ['3. Fonts', fontsDemo],
-  ['4. Input', inputDemo]
+  ['Events', eventsDemo],
+  ['Colour cycling', colourCyclingDemo],
+  ['Fonts', fontsDemo],
+  ['Input', inputDemo]
 ];
 
 function menu(tm) {
