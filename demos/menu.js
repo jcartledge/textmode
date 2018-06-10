@@ -1,39 +1,23 @@
+import drawMenu from '../util/drawMenu.js';
+import eventsDemo from './events.js';
+const colourCyclingDemo = _ => console.log('colourCycling');
+const fontsDemo = _ => console.log('fonts');
+const inputDemo = _ => console.log('input');
+
 const menuItems = [
-  '1. Events',
-  '2. Colour cycling',
-  '3. Fonts',
-  '4. Input'
+  ['1. Events', eventsDemo],
+  ['2. Colour cycling', colourCyclingDemo],
+  ['3. Fonts', fontsDemo],
+  ['4. Input', inputDemo]
 ];
 
-let selectedMenuItem = 0;
-
-function printMenu (tm) {
+function menu(tm) {
+  tm.cls();
   tm.moveTo(0, 0);
   tm.println();
   tm.center('*** TEXTMODE ***');
   tm.println();
-  menuItems.map((item, i) => {
-    if (i === selectedMenuItem) {
-      tm.inv().center(item).inv();
-    } else {
-      tm.center(item);
-    }
-  });
-  tm.getKey().then(e => {
-    switch (e.key) {
-      case 'ArrowUp':
-        selectedMenuItem = Math.max(0, selectedMenuItem - 1);
-        break;
-      case 'ArrowDown':
-        selectedMenuItem = Math.min(menuItems.length - 1, selectedMenuItem + 1);
-    }
-    printMenu(tm);
-  });
-}
-
-function menu(tm) {
-  tm.cls();
-  printMenu(tm);
+  drawMenu(tm, menuItems, _ => menu(tm));
 }
 
 export default menu;
