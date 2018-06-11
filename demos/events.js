@@ -1,16 +1,21 @@
 import drawMenu from '../util/drawMenu.js';
 
 const eventHandlers = {
+  'BeforeRender': e => {
+    const {args} = e.detail;
+    args.textBuffer = args.textBuffer.reverse();
+  },
   'BeforeRenderChar': e => {
     const {args} = e.detail;
-    if (args.asciiCode) {
-      args.bg = args.asciiCode % 8;
+    if (Math.random() < 0.01) {
+      args.asciiCode = Math.floor(Math.random() * (127 - 34)) + 33;
     }
   },
   'BeforeRenderCharRow': e => {
     const {args} = e.detail;
     if (args.asciiCode) {
-      args.fg = args.charRowIndex % 7 + 1;
+      args.fg = ((new Date()).getMilliseconds() + args.charRowIndex) % 7 + 1;
+      counter = ++counter % 7;
     }
   }
 };
@@ -43,7 +48,6 @@ function eventsDemo (tm, backToMenu) {
   menuItems.push(['<- Back to menu', backToMenu]);
   tm.cls().println();
   tm.center('*** Events ***').println();
-  tm.println();
   drawMenu(tm, menuItems, _ => eventsDemo(tm, backToMenu));
 }
 
