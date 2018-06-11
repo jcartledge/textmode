@@ -51,7 +51,7 @@ function colourCyclingDemo (tm, backToMenu) {
     fg.push(fg.shift());
     tm.palette = [bg, ...fg];
   }
-  const saveEvents = tm.events;
+  const saveBeforeRenderState = tm.events.BeforeRender;
   tm.events.BeforeRender = true;
   tm.canvas.addEventListener('textModeBeforeRender', cycle);
 
@@ -70,7 +70,7 @@ function colourCyclingDemo (tm, backToMenu) {
   tm.getKey().then(_ => {
     tm.palette = savePalette;
     tm.canvas.removeEventListener('textModeBeforeRender', cycle);
-    tm.events = saveEvents;
+    tm.events.BeforeRender = saveBeforeRenderState;
     backToMenu();
   });
 }
