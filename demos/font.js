@@ -1,5 +1,4 @@
 function fontDemo (tm, backToMenu) {
-
   const selectMode = Symbol('selectMode');
   const editMode = Symbol('editMode');
   let mode = selectMode;
@@ -95,7 +94,7 @@ function fontDemo (tm, backToMenu) {
           mode = selectMode;
       }
       drawFontDemo();
-    })
+    });
   }
   drawFontDemo();
 }

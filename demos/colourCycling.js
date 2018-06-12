@@ -1,5 +1,5 @@
-const palette = Uint32Array.from([//{
-  //AARRGGBB
+const palette = Uint32Array.from([
+  // AARRGGBB
   0xFF000000,
 
   0xFFFFFFFF,
@@ -43,7 +43,7 @@ const palette = Uint32Array.from([//{
   0xFF999900,
   0xFF666600,
   0xFF333300
-]);//}
+]);
 
 function colourCyclingDemo (tm, backToMenu) {
   function cycle () {
@@ -76,4 +76,3 @@ function colourCyclingDemo (tm, backToMenu) {
 }
 
 export default colourCyclingDemo;
-

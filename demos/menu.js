@@ -11,7 +11,7 @@ const menuItems = [
   ['Input', inputDemo]
 ];
 
-function menu(tm) {
+function menu (tm) {
   tm.cls();
   tm.println();
   tm.center('*** TEXTMODE ***');

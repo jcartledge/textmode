@@ -15,7 +15,6 @@ const eventHandlers = {
     const {args} = e.detail;
     if (args.asciiCode) {
       args.fg = ((new Date()).getMilliseconds() + args.charRowIndex) % 7 + 1;
-      counter = ++counter % 7;
     }
   }
 };

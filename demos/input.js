@@ -6,7 +6,7 @@ function inputDemo (tm, backToMenu) {
   function getInput () {
     tm.inputln('Ok ').then(str => {
       const upcase = str.toUpperCase();
-      if (upcase == 'QUIT') {
+      if (upcase === 'QUIT') {
         backToMenu();
       } else {
         tm.println(upcase);
