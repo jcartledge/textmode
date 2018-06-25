@@ -1,11 +1,13 @@
 {
+  "package": "textmode",
   "scripts": {
     "dev": "static-server -p 8051 -o .",
-    "test": "browserify test/textMode.test.js | tape-run",
-    "watch": "npm-watch"
+    "test": "browserify test/textMode.test.js | tape-run | faucet",
+    "watch": "npm-watch",
+    "doc": "documentation serve --watch lib/**"
   },
   "watch": {
-    "test": "{src,test}/**/*.js"
+    "test": "{lib,test}/**/*.js"
   },
   "browserify": {
     "transform": [
@@ -18,6 +20,7 @@
     "babel-preset-env": "^1.7.0",
     "babelify": "^8.0.0",
     "browserify": "^16.2.2",
+    "documentation": "^8.0.0",
     "eslint": "^4.19.1",
     "eslint-config-semistandard": "^12.0.1",
     "eslint-config-standard": "^11.0.0",
@@ -25,6 +28,7 @@
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
+    "faucet": "^0.0.1",
     "npm-watch": "^0.3.0",
     "static-server": "^2.2.1",
     "tape": "^4.9.1",
