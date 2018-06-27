@@ -11,7 +11,7 @@ test('Constructor passed a canvas uses it', t => {
   t.plan(1);
   const canvas = document.createElement('canvas');
   const tm = new TextMode({canvas});
-  t.equal(canvas, tm.canvas);
+  t.equal(tm.canvas, canvas);
 });
 
 test('Constructor with default args has a font', t => {
@@ -38,7 +38,7 @@ test('Constructor passed a palette uses it', t => {
   t.plan(1);
   const palette = Array(8).fill(0);
   const tm = new TextMode({palette});
-  t.equal(palette, tm.palette);
+  t.equal(tm.palette, palette);
 });
 
 test('Constructor with default numRows and numCols', t => {
@@ -53,8 +53,8 @@ test('Constructor passed numRows and numCols', t => {
   const numRows = 5;
   const numCols = 10;
   const tm = new TextMode({numRows, numCols});
-  t.equal(numRows, tm.numRows);
-  t.equal(numCols, tm.numCols);
+  t.equal(tm.numRows, numRows);
+  t.equal(tm.numCols, numCols);
 });
 
 test('Constructor with default vscale and hscale', t => {
@@ -69,6 +69,6 @@ test('Constructor passed vscale and hscale', t => {
   const hscale = 2;
   const vscale = 3;
   const tm = new TextMode({hscale, vscale});
-  t.equal(hscale, tm.hscale);
-  t.equal(vscale, tm.vscale);
+  t.equal(tm.hscale, hscale);
+  t.equal(tm.vscale, vscale);
 });

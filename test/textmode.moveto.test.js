@@ -23,14 +23,14 @@ test('moveTo row, col - negative row and col', t => {
   t.plan(1);
   const tm = new TextMode();
   tm.moveTo(-1, -10);
-  t.deepEqual([0, 0], [tm.row, tm.col]);
+  t.deepEqual([tm.row, tm.col], [0, 0]);
 });
 
 test('moveTo row, col - NaN input', t => {
   t.plan(1);
   const tm = new TextMode();
   tm.moveTo('a', 'b');
-  t.deepEqual([0, 0], [tm.row, tm.col]);
+  t.deepEqual([tm.row, tm.col], [0, 0]);
 });
 
 test('moveTo row, col - over bounds', t => {
@@ -38,13 +38,13 @@ test('moveTo row, col - over bounds', t => {
   const tm = new TextMode();
 
   tm.moveTo(0, tm.numCols);
-  t.deepEqual([0, tm.numCols - 1], [tm.row, tm.col]);
+  t.deepEqual([tm.row, tm.col], [0, tm.numCols - 1]);
 
   tm.moveTo(tm.numRows, 0);
-  t.deepEqual([tm.numRows - 1, 0], [tm.row, tm.col]);
+  t.deepEqual([tm.row, tm.col], [tm.numRows - 1, 0]);
 
   tm.moveTo(tm.numRows + 100, tm.numCols + 100);
-  t.deepEqual([tm.numRows - 1, tm.numCols - 1], [tm.row, tm.col]);
+  t.deepEqual([tm.row, tm.col], [tm.numRows - 1, tm.numCols - 1]);
 });
 
 test('moveTo pos', t => {
@@ -58,19 +58,19 @@ test('moveTo pos - negative', t => {
   t.plan(1);
   const tm = new TextMode();
   tm.moveTo(-1);
-  t.equal(0, tm.pos);
+  t.equal(tm.pos, 0);
 });
 
 test('moveTo pos - NaN', t => {
   t.plan(1);
   const tm = new TextMode();
   tm.moveTo('a');
-  t.equal(0, tm.pos);
+  t.equal(tm.pos, 0);
 });
 
 test('moveTo pos - over bounds', t => {
   t.plan(1);
   const tm = new TextMode();
   tm.moveTo(tm.numRows * tm.numCols * 2);
-  t.deepEqual([tm.numRows - 1, tm.numCols - 1], [tm.row, tm.col]);
+  t.deepEqual([tm.row, tm.col], [tm.numRows - 1, tm.numCols - 1]);
 });
