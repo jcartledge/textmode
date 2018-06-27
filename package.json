@@ -2,12 +2,12 @@
   "package": "textmode",
   "scripts": {
     "dev": "static-server -p 8051 -o .",
-    "test": "browserify test/textMode.test.js | tape-run | faucet",
+    "test": "browserify test/**.js | tape-run | faucet",
     "watch": "npm-watch",
     "doc": "documentation serve --watch lib/**"
   },
   "watch": {
-    "test": "{lib,test}/**/*.js"
+    "test": "{lib,test}/**/**.js"
   },
   "browserify": {
     "transform": [

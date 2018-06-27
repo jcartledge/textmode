@@ -33,3 +33,42 @@ test('Constructor with default args has a palette', t => {
   const tm = new TextMode();
   t.equal(tm.palette, textModePalette);
 });
+
+test('Constructor passed a palette uses it', t => {
+  t.plan(1);
+  const palette = Array(8).fill(0);
+  const tm = new TextMode({palette});
+  t.equal(palette, tm.palette);
+});
+
+test('Constructor with default numRows and numCols', t => {
+  t.plan(2);
+  const tm = new TextMode();
+  t.ok(tm.numRows);
+  t.ok(tm.numCols);
+});
+
+test('Constructor passed numRows and numCols', t => {
+  t.plan(2);
+  const numRows = 5;
+  const numCols = 10;
+  const tm = new TextMode({numRows, numCols});
+  t.equal(numRows, tm.numRows);
+  t.equal(numCols, tm.numCols);
+});
+
+test('Constructor with default vscale and hscale', t => {
+  t.plan(2);
+  const tm = new TextMode();
+  t.ok(tm.vscale);
+  t.ok(tm.hscale);
+});
+
+test('Constructor passed vscale and hscale', t => {
+  t.plan(2);
+  const hscale = 2;
+  const vscale = 3;
+  const tm = new TextMode({hscale, vscale});
+  t.equal(hscale, tm.hscale);
+  t.equal(vscale, tm.vscale);
+});
