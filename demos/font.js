@@ -24,7 +24,7 @@ function fontDemo (tm, backToMenu) {
     }
 
     tm.println();
-    charOriginRow = tm.row;
+    charOriginRow = tm.loc.row;
     charOriginCol = tm.numCols / 2 - tm.font.width / 2;
     tm.font.chr(currentChar).forEach(row => {
       const rowString = row.toString(2).padStart(tm.font.width, 0).replace(/0/g, ' ').replace(/1/g, '*');

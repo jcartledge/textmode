@@ -6,7 +6,7 @@ test('cr', t => {
   const tm = new TextMode();
   tm.moveTo(0, 5);
   tm.cr();
-  t.deepEqual([tm.row, tm.col], [0, 0]);
+  t.deepEqual([tm.loc.row, tm.loc.col], [0, 0]);
 });
 
 test('lf', t => {
@@ -14,7 +14,7 @@ test('lf', t => {
   const tm = new TextMode();
   tm.moveTo(0, 5);
   tm.lf();
-  t.deepEqual([tm.row, tm.col], [1, 5]);
+  t.deepEqual([tm.loc.row, tm.loc.col], [1, 5]);
 });
 
 test('crlf', t => {
@@ -22,7 +22,7 @@ test('crlf', t => {
   const tm = new TextMode();
   tm.moveTo(0, 5);
   tm.crlf();
-  t.deepEqual([tm.row, tm.col], [1, 0]);
+  t.deepEqual([tm.loc.row, tm.loc.col], [1, 0]);
 });
 
 test('newLine', t => {
@@ -30,5 +30,5 @@ test('newLine', t => {
   const tm = new TextMode();
   tm.moveTo(0, 5);
   tm.newLine();
-  t.deepEqual([tm.row, tm.col], [1, 0]);
+  t.deepEqual([tm.loc.row, tm.loc.col], [1, 0]);
 });

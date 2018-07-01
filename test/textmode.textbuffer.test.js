@@ -16,7 +16,7 @@ test('cls', t => {
   tm.moveTo(5, 5);
   tm.cls();
   t.equal(extractText(tm.textBuffer), '');
-  t.equal(tm.pos, 0);
+  t.equal(tm.loc.pos, 0);
 });
 
 test('print', t => {
@@ -24,7 +24,7 @@ test('print', t => {
   const tm = new TextMode();
   tm.print(testString);
   t.equal(extractText(tm.textBuffer), testString);
-  t.equal(tm.pos, testString.length);
+  t.equal(tm.loc.pos, testString.length);
 });
 
 test('println', t => {
@@ -32,7 +32,7 @@ test('println', t => {
   const tm = new TextMode();
   tm.println(testString);
   t.equal(extractText(tm.textBuffer), testString);
-  t.deepEqual([tm.row, tm.col], [1, 0]);
+  t.deepEqual([tm.loc.row, tm.loc.col], [1, 0]);
 });
 
 test('inv', t => {
