@@ -13,7 +13,7 @@ test('cls', t => {
   t.plan(2);
   const tm = new TextMode();
   tm.print('Hello!');
-  tm.moveTo(5, 5);
+  tm.loc = [5, 5];
   tm.cls();
   t.equal(extractText(tm.textBuffer), '');
   t.equal(tm.loc.pos, 0);

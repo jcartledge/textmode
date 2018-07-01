@@ -46,7 +46,7 @@ function fontDemo (tm, backToMenu) {
     tm.center('space to edit character,');
     tm.center('q to return to menu');
 
-    tm.moveTo(currentChar - firstChar + startPos);
+    tm.loc = currentChar - firstChar + startPos;
     tm.getKey().then(e => {
       switch (e.key) {
         case 'ArrowLeft':
@@ -72,7 +72,7 @@ function fontDemo (tm, backToMenu) {
     tm.center('space to toggle,');
     tm.center('q to exit');
 
-    tm.moveTo(charOriginRow + editRow, charOriginCol + editCol);
+    tm.loc = [charOriginRow + editRow, charOriginCol + editCol];
     tm.getKey().then(e => {
       switch (e.key) {
         case 'ArrowUp':
