@@ -3,6 +3,8 @@
   "scripts": {
     "dev": "static-server -p 8051 -o .",
     "test": "browserify test/**.js | tape-run | faucet",
+    "lint": "eslint {lib,demos,test}",
+    "ci": "yarn lint && yarn test",
     "watch": "npm-watch",
     "doc": "documentation serve --watch lib/**"
   },
